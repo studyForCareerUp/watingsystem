@@ -23,17 +23,37 @@ public class WaitingRoomController { //대기하는 웹사이트 개발
 
         // 1. 입장이 허용되어 page redircet(이동) 이 가능한 상태인가?
         // 2. 어디로 이동해야 하는가?
-        return userQueueService.isAllowed(queue, userId)
+//        return userQueueService.isAllowed(queue, userId)
+//                .filter(allowed -> allowed)
+//                .flatMap(allowed -> Mono.just(Rendering.redirectTo(redirectUrl).build()))
+//                .switchIfEmpty(
+//                        userQueueService.registerWaitQueue(queue, userId)
+//                                .onErrorResume(ex -> userQueueService.getRank(queue, userId)) //에러가 발생할 경우 유저의 순위 반환
+//                                .map(rank -> Rendering.view("waiting-room.html")
+//                                        .modelAttribute("number", rank)
+//                                        .modelAttribute("userId", userId)
+//                                        .modelAttribute("queue", queue)
+//                                        .build())
+//                );
+
+
+        // 대기열 이탈 고려하여 토큰까지 넘김
+        var key = "user-queue-%s-token".formatted(queue);
+        var cookieValue = exchange.getRequest().getCookies().getFirst(key);
+        var token = (cookieValue == null) ? "" : cookieValue.getValue();
+
+        return userQueueService.isAllowedByToken(queue, userId, token)
                 .filter(allowed -> allowed)
                 .flatMap(allowed -> Mono.just(Rendering.redirectTo(redirectUrl).build()))
                 .switchIfEmpty(
                         userQueueService.registerWaitQueue(queue, userId)
-                                .onErrorResume(ex -> userQueueService.getRank(queue, userId)) //에러가 발생할 경우 유저의 순위 반환
+                                .onErrorResume(ex -> userQueueService.getRank(queue, userId))
                                 .map(rank -> Rendering.view("waiting-room.html")
                                         .modelAttribute("number", rank)
                                         .modelAttribute("userId", userId)
                                         .modelAttribute("queue", queue)
-                                        .build())
+                                        .build()
+                                )
                 );
 
     }
