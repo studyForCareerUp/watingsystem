@@ -122,4 +122,26 @@ class UserQueueServiceTest {
 
 
     }
+
+    @Test
+    @DisplayName("대기열에 있는 유저의 순위를 반환한다.")
+    void getRank() {
+        StepVerifier.create(userQueueService.registerWaitQueue("default", 100L)
+                        .then(userQueueService.getRank("default", 100L)))
+                .expectNext(1L)
+                .verifyComplete();
+
+        StepVerifier.create(userQueueService.registerWaitQueue("default", 101L)
+                        .then(userQueueService.getRank("default", 101L)))
+                .expectNext(2L)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("빈대기열에 있는 유저의 순위는 없다.")
+    void emptyRank() {
+        StepVerifier.create(userQueueService.getRank("default", 101L))
+                .expectNext(-1L)
+                .verifyComplete();
+    }
 }
